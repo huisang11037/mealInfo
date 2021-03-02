@@ -7,7 +7,10 @@ import android.os.StrictMode;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -27,12 +30,13 @@ public class MainActivity extends AppCompatActivity {
     InputMethodManager imm;
     EditText editDate;
     TextView status1;
+    Spinner gradeSpinner;
 
-    boolean inDDISH_NM = false, inMMEAL_SC_NM = false;
-    String dDISH_NM = null, mMeal_SC_NM = null;
-    String code = null;
-    boolean inCode = false;
+    //시도 교육청 코드: R10 표준 학교 코드: 8881025 , 8750130 KEY=178a8938c5404e889f3f20eee3811ae0
     String date_text = null;
+
+    ArrayAdapter<String> gradeAdapter;
+    String[] grade = {"중1", "중2", "중3", "고1", "고2", "고3"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +48,20 @@ public class MainActivity extends AppCompatActivity {
         status1 = (TextView)findViewById(R.id.textview);
         editDate = (EditText)findViewById(R.id.editDate);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        gradeSpinner = (Spinner)findViewById(R.id.spinnerGrade);
 
+        gradeAdapter = new ArrayAdapter<>(getApplicationContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                grade);
+        gradeSpinner.setAdapter(gradeAdapter);
+        gradeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+            }
+        });
 
         //에딧텍스트를 눌렀을때 기존에 있던 문자 제거
         editDate.setOnClickListener(new View.OnClickListener() {
@@ -61,7 +78,15 @@ public class MainActivity extends AppCompatActivity {
                     case KeyEvent.KEYCODE_ENTER:
                         date_text = String.valueOf(editDate.getText());
                         HideKeyboard();
+                        if (date_text.equals("")){
+                            status1.setText("날짜가 입력되지 않았습니다.");
+                            return true;
+                        }
+                        status1.setText(date_text.substring(0, 4) + "년 " +
+                                date_text.substring(4, 6) + "월 " +
+                                date_text.substring(6, 8) + "일\n\n");
                         DiteUpdate();
+                        TimeTableUpdate();
                         break;
                 }
                 return false;
@@ -75,29 +100,35 @@ public class MainActivity extends AppCompatActivity {
                 HideKeyboard();
             }
         });
+        View.OnClickListener myClickListener = new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                HideKeyboard();
+            }
+        };
 
 
         Date currentTime = Calendar.getInstance().getTime();
         date_text = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(currentTime);
         DiteUpdate();
+        TimeTableUpdate();
     }
 
     private void DiteUpdate(){
-        if (date_text.equals("")){
-            status1.setText("날짜가 입력되지 않았습니다.");
-            return;
-        }
-        status1.setText(date_text.substring(0, 4) + "년 " + date_text.substring(4, 6) + "월 " + date_text.substring(6, 8) + "일\n");
-        
+        boolean inDDISH_NM = false, inMMEAL_SC_NM = false;
+        String dDISH_NM = null, mMeal_SC_NM = null;
+        String code = null;
+        boolean inCode = false;
         try{
-            URL url = new URL("https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=178a8938c5404e889f3f20eee3811ae0&Type=xml&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=R10&SD_SCHUL_CODE=8881025" +
+            URL url = new URL("https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=178a8938c5404e889f3f20eee3811ae0&Type=xml" +
+                    "&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=R10&SD_SCHUL_CODE=8881025" +
                     "&MLSV_YMD=" + date_text); //검색 URL부분
 
             XmlPullParserFactory parserCreator = XmlPullParserFactory.newInstance();
             XmlPullParser parser = parserCreator.newPullParser();
-
             parser.setInput(url.openStream(), null);
-
             int parserEvent = parser.getEventType();
 
             while (parserEvent != XmlPullParser.END_DOCUMENT){
@@ -138,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                         if(parser.getName().equals("MMEAL_SC_NM")){
-                            status1.setText(status1.getText() + mMeal_SC_NM + "\n");
+                            status1.setText(status1.getText() + mMeal_SC_NM + "\n\n");
                         }
                         if(parser.getName().equals("DDISH_NM")){
                             //원래 문자열을 깔끔하게 정리하기 위한 과정
@@ -151,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
                             for (int i =0; i < dishs.length; i++){
                                 status1.setText(status1.getText() + dishs[i] + "\n");
                             }
-                            status1.setText(status1.getText() + "\n\n");
+                            status1.setText(status1.getText() + "\n\n\n");
                         }
 
                         break;
@@ -161,6 +192,74 @@ public class MainActivity extends AppCompatActivity {
         } catch(Exception e){
             status1.setText("에러가.. 났습니다...\n" + e);
         }
+    }
+
+    private void TimeTableUpdate(){
+        boolean inPerio = false, inITRT_CNTNT = false;
+        String perio = null, itrt_CNTNT = null;
+
+        String currentGrade = gradeSpinner.getSelectedItem().toString();
+        boolean isHigh = true;
+        if (currentGrade.substring(0, 2).equals("중")){
+            isHigh = false;
+        }
+        int grade = Integer.parseInt(currentGrade.substring(1));
+
+        try {
+            URL url;
+            if (isHigh){
+                url = new URL("https://open.neis.go.kr/hub/hisTimetable?KEY=178a8938c5404e889f3f20eee3811ae0&Type=" +
+                        "&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=R10&SD_SCHUL_CODE=8750130" +
+                        "&ALL_TI_YMD=" + date_text +
+                        "&GRADE=" + grade);
+            } else {
+                url = new URL("https://open.neis.go.kr/hub/misTimetable?KEY=178a8938c5404e889f3f20eee3811ae0&Type=xml" +
+                        "&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=R10&SD_SCHUL_CODE=8881025" +
+                        "&ALL_TI_YMD=" + date_text +
+                        "&GRADE=" + grade);
+            }
+
+            XmlPullParserFactory parserCreator = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = parserCreator.newPullParser();
+            parser.setInput(url.openStream(), null);
+            int parserEvent = parser.getEventType();
+
+            while (parserEvent != XmlPullParser.END_DOCUMENT){
+                switch(parserEvent){
+                    case XmlPullParser.START_TAG://parser가 시작 태그를 만나면 실행
+                        if(parser.getName().equals(("PERIO"))){
+                            inPerio = true;
+                        }
+                        if(parser.getName().equals("ITRT_CNTNT")){
+                            inITRT_CNTNT = true;
+                        }
+                        break;
+
+                    case XmlPullParser.TEXT://parser가 내용에 접근했을때
+                        if (inPerio){
+                            perio = parser.getText();
+                            inPerio = false;
+                        }
+                        if (inITRT_CNTNT){
+                            itrt_CNTNT = parser.getText();
+                            inITRT_CNTNT = false;
+                        }
+                        break;
+
+                    case XmlPullParser.END_TAG:
+                        if(parser.getName().equals("PERIO")){
+                            status1.setText(status1.getText() + perio + "교시: ");
+                        }
+                        if(parser.getName().equals("ITRT_CNTNT")){
+                            status1.setText(status1.getText() + itrt_CNTNT + "\n");
+                        }
+                        break;
+                }
+                parserEvent = parser.next();
+            }
+        } catch (Exception e) {
+        }
+
     }
 
     private void HideKeyboard() {

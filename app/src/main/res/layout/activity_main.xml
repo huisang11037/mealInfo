@@ -11,31 +11,50 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
             android:orientation="horizontal">
 
             <EditText
                 android:id="@+id/editDate"
-                android:layout_width="407dp"
-                android:layout_height="75dp"
-                android:hint="날짜를 입력해주세요. "
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:autofillHints=""
+                android:hint="예) 20210326"
                 android:inputType="number"
                 android:maxLength="8"
-                android:textSize="30sp"
+                android:textSize="25sp"
                 tools:ignore="MissingConstraints" />
 
+            <Spinner
+                android:id="@+id/spinnerGrade"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/textview"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="600dp"
-            android:text=""
-            android:textAlignment="center"
-            android:textColor="#000000"
-            android:textSize="15sp" />
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/textview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textAlignment="center"
+                    android:textColor="#000000"
+                    android:textSize="25sp" />
+            </LinearLayout>
+        </ScrollView>
+
     </LinearLayout>
 
 
