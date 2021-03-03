@@ -19,8 +19,9 @@
 
             <EditText
                 android:id="@+id/editDate"
-                android:layout_width="300dp"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
+                android:layout_weight="2"
                 android:autofillHints=""
                 android:hint="예) 20210326"
                 android:inputType="number"

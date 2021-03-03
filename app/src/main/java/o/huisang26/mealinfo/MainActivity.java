@@ -2,6 +2,7 @@ package o.huisang26.mealinfo;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.KeyEvent;
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
     ArrayAdapter<String> gradeAdapter;
     String[] grade = {"중1", "중2", "중3", "고1", "고2", "고3"};
 
+    private SharedPreferences appData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         gradeSpinner = (Spinner)findViewById(R.id.spinnerGrade);
 
+        //gradeSpinner 에 들어갈 어댑터(고1, 고2 등 설정)
         gradeAdapter = new ArrayAdapter<>(getApplicationContext(),
                 android.R.layout.simple_spinner_dropdown_item,
                 grade);
@@ -57,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         gradeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                Save();
             }
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
@@ -112,8 +117,11 @@ public class MainActivity extends AppCompatActivity {
 
         Date currentTime = Calendar.getInstance().getTime();
         date_text = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(currentTime);
+        appData = getSharedPreferences("appData", MODE_PRIVATE);
+        Load();
         DiteUpdate();
         TimeTableUpdate();
+        HideKeyboard();
     }
 
     private void DiteUpdate(){
@@ -260,6 +268,18 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
         }
 
+    }
+
+    private void  Save(){
+        SharedPreferences.Editor editor = appData.edit();
+
+        editor.putInt("GRADE", gradeSpinner.getSelectedItemPosition());
+
+        editor.commit();
+    }
+
+    private void Load(){
+        gradeSpinner.setSelection(appData.getInt("GRADE", 0));
     }
 
     private void HideKeyboard() {
