@@ -30,7 +30,8 @@ public class MainActivity extends AppCompatActivity {
 
     InputMethodManager imm;
     EditText editDate;
-    TextView status1;
+    TextView diteView;
+    TextView timetableView;
     Spinner gradeSpinner;
 
     //시도 교육청 코드: R10 표준 학교 코드: 8881025 , 8750130 KEY=178a8938c5404e889f3f20eee3811ae0
@@ -48,7 +49,8 @@ public class MainActivity extends AppCompatActivity {
 
         StrictMode.enableDefaults();
 
-        status1 = (TextView)findViewById(R.id.textview);
+        diteView = (TextView)findViewById(R.id.diteText);
+        timetableView = (TextView)findViewById(R.id.timetableText);
         editDate = (EditText)findViewById(R.id.editDate);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         gradeSpinner = (Spinner)findViewById(R.id.spinnerGrade);
@@ -84,21 +86,19 @@ public class MainActivity extends AppCompatActivity {
                         date_text = String.valueOf(editDate.getText());
                         HideKeyboard();
                         if (date_text.equals("")){
-                            status1.setText("날짜가 입력되지 않았습니다.");
+                            diteView.setText("날짜가 입력되지 않았습니다.");
+                            timetableView.setText("");
                             return true;
                         }
-                        status1.setText(date_text.substring(0, 4) + "년 " +
-                                date_text.substring(4, 6) + "월 " +
-                                date_text.substring(6, 8) + "일\n\n");
                         DiteUpdate();
-                        TimeTableUpdate();
+                        timetableViewUpdate();
                         break;
                 }
                 return false;
             }
         });
         //바탕 눌렀을 때 키보드 숨기기
-        status1.setOnClickListener(new View.OnClickListener() {
+        diteView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 editDate.setText(null);
@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         appData = getSharedPreferences("appData", MODE_PRIVATE);
         Load();
         DiteUpdate();
-        TimeTableUpdate();
+        timetableViewUpdate();
         HideKeyboard();
     }
 
@@ -129,6 +129,9 @@ public class MainActivity extends AppCompatActivity {
         String dDISH_NM = null, mMeal_SC_NM = null;
         String code = null;
         boolean inCode = false;
+        diteView.setText(date_text.substring(0, 4) + "년 " +
+                date_text.substring(4, 6) + "월 " +
+                date_text.substring(6, 8) + "일\n\n");
         try{
             URL url = new URL("https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=178a8938c5404e889f3f20eee3811ae0&Type=xml" +
                     "&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=R10&SD_SCHUL_CODE=8881025" +
@@ -173,11 +176,11 @@ public class MainActivity extends AppCompatActivity {
                     case XmlPullParser.END_TAG:
                         if(parser.getName().equals("CODE")){
                             if(code.equals("INFO-200")){
-                                status1.setText(status1.getText() + "오늘은 급식이 없어요 :)");
+                                diteView.setText(diteView.getText() + "오늘은 급식이 없어요 :)");
                             }
                         }
                         if(parser.getName().equals("MMEAL_SC_NM")){
-                            status1.setText(status1.getText() + mMeal_SC_NM + "\n\n");
+                            diteView.setText(diteView.getText() + mMeal_SC_NM + "\n\n");
                         }
                         if(parser.getName().equals("DDISH_NM")){
                             //원래 문자열을 깔끔하게 정리하기 위한 과정
@@ -188,9 +191,9 @@ public class MainActivity extends AppCompatActivity {
                             String[] dishs = dish.split("/"); //각 급식 항목들을 dishs[]에 하나씩 넣음
 
                             for (int i =0; i < dishs.length; i++){
-                                status1.setText(status1.getText() + dishs[i] + "\n");
+                                diteView.setText(diteView.getText() + dishs[i] + "\n");
                             }
-                            status1.setText(status1.getText() + "\n\n\n");
+                            diteView.setText(diteView.getText() + "\n\n\n");
                         }
 
                         break;
@@ -198,14 +201,15 @@ public class MainActivity extends AppCompatActivity {
                 parserEvent = parser.next();
             }
         } catch(Exception e){
-            status1.setText("에러가.. 났습니다...\n" + e);
+            diteView.setText("에러가.. 났습니다...\n" + e);
         }
     }
 
-    private void TimeTableUpdate(){
+    private void timetableViewUpdate(){
         boolean inPerio = false, inITRT_CNTNT = false;
         String perio = null, itrt_CNTNT = null;
 
+        timetableView.setText(null);
         String currentGrade = gradeSpinner.getSelectedItem().toString();
         boolean isHigh = true;
         if (currentGrade.substring(0, 2).equals("중")){
@@ -256,10 +260,10 @@ public class MainActivity extends AppCompatActivity {
 
                     case XmlPullParser.END_TAG:
                         if(parser.getName().equals("PERIO")){
-                            status1.setText(status1.getText() + perio + "교시: ");
+                            timetableView.setText(timetableView.getText() + perio + "교시: ");
                         }
                         if(parser.getName().equals("ITRT_CNTNT")){
-                            status1.setText(status1.getText() + itrt_CNTNT + "\n");
+                            timetableView.setText(timetableView.getText() + itrt_CNTNT + "\n");
                         }
                         break;
                 }
@@ -275,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
 
         editor.putInt("GRADE", gradeSpinner.getSelectedItemPosition());
 
-        editor.commit();
+        editor.apply();
     }
 
     private void Load(){
@@ -285,5 +289,4 @@ public class MainActivity extends AppCompatActivity {
     private void HideKeyboard() {
         imm.hideSoftInputFromWindow(editDate.getWindowToken(), 0);
     }
-
 }
