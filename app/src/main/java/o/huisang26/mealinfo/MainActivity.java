@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -13,6 +14,9 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.material.navigation.NavigationView;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -23,7 +27,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 public class MainActivity extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
@@ -33,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     TextView diteView;
     TextView timetableView;
     Spinner gradeSpinner;
+
+    private DrawerLayout mDrawerLayout;
+    private Context context = this;
 
     //시도 교육청 코드: R10 표준 학교 코드: 8881025 , 8750130 KEY=178a8938c5404e889f3f20eee3811ae0
     String date_text = null;
@@ -54,6 +65,39 @@ public class MainActivity extends AppCompatActivity {
         editDate = (EditText)findViewById(R.id.editDate);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         gradeSpinner = (Spinner)findViewById(R.id.spinnerGrade);
+
+        //툴바
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayShowTitleEnabled(false); // 기존 title 지우기
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        //드로우 레이아웃
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(MenuItem menuItem) {
+                menuItem.setChecked(true);
+                mDrawerLayout.closeDrawers();
+
+                int id = menuItem.getItemId();
+                String title = menuItem.getTitle().toString();
+
+                if(id == R.id.account){
+                    Toast.makeText(context, title + "을 눌렀습니다.", Toast.LENGTH_SHORT).show();
+                }
+                else if(id == R.id.setting){
+                    Toast.makeText(context, title + "을 눌렀습니다.", Toast.LENGTH_SHORT).show();
+                }
+                else if(id == R.id.logout){
+                    Toast.makeText(context, title + "을 눌렀습니다.", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+        });
+
 
         //gradeSpinner 에 들어갈 어댑터(고1, 고2 등 설정)
         gradeAdapter = new ArrayAdapter<>(getApplicationContext(),
@@ -288,5 +332,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void HideKeyboard() {
         imm.hideSoftInputFromWindow(editDate.getWindowToken(), 0);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case android.R.id.home:{ // 왼쪽 상단 버튼 눌렀을 때
+                mDrawerLayout.openDrawer(GravityCompat.START);
+                return true;
+            }
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(mDrawerLayout.isDrawerOpen(GravityCompat.START)){
+            mDrawerLayout.closeDrawers();
+        } else{
+            super.onBackPressed();
+        }
     }
 }
