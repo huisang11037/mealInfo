@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -33,13 +32,9 @@ public class MainActivity extends AppCompatActivity {
     EditText editDate;
     TextView diteView;
     TextView timetableView;
-    TextView dateText;
     Spinner gradeSpinner;
-    Button nextBtn;
-    Button preBtn;
 
     //시도 교육청 코드: R10 표준 학교 코드: 8881025 , 8750130 KEY=178a8938c5404e889f3f20eee3811ae0
-    Date currentTime;
     String date_text = null;
 
     ArrayAdapter<String> gradeAdapter;
@@ -54,17 +49,11 @@ public class MainActivity extends AppCompatActivity {
 
         StrictMode.enableDefaults();
 
-        dateText = (TextView)findViewById(R.id.date);
         diteView = (TextView)findViewById(R.id.diteText);
         timetableView = (TextView)findViewById(R.id.timetableText);
         editDate = (EditText)findViewById(R.id.editDate);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         gradeSpinner = (Spinner)findViewById(R.id.spinnerGrade);
-        nextBtn = (Button)findViewById(R.id.NextBtn);
-        preBtn = (Button)findViewById(R.id.preBtn);
-
-        currentTime = Calendar.getInstance().getTime();
-        date_text = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(currentTime);
 
         //gradeSpinner 에 들어갈 어댑터(고1, 고2 등 설정)
         gradeAdapter = new ArrayAdapter<>(getApplicationContext(),
@@ -78,24 +67,6 @@ public class MainActivity extends AppCompatActivity {
             }
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-            }
-        });
-
-        //날짜 버튼 설정
-        nextBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                currentTime = new Date ( currentTime.getTime() + (long) ( 1000 * 60 * 60 * 24 ) );
-                date_text = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(currentTime);
-                allUpdate();
-            }
-        });
-        preBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                currentTime = new Date ( currentTime.getTime() - (long) ( 1000 * 60 * 60 * 24 ) );
-                date_text = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(currentTime);
-                allUpdate();
             }
         });
 
@@ -119,7 +90,8 @@ public class MainActivity extends AppCompatActivity {
                             timetableView.setText("");
                             return true;
                         }
-                        allUpdate();
+                        DiteUpdate();
+                        timetableViewUpdate();
                         break;
                 }
                 return false;
@@ -142,18 +114,14 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+
+        Date currentTime = Calendar.getInstance().getTime();
+        date_text = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(currentTime);
         appData = getSharedPreferences("appData", MODE_PRIVATE);
         Load();
-        HideKeyboard();
-        allUpdate();
-    }
-
-    private void allUpdate(){
         DiteUpdate();
         timetableViewUpdate();
-        dateText.setText(date_text.substring(0, 4) + "년 " +
-                date_text.substring(4, 6) + "월 " +
-                date_text.substring(6, 8) + "일");
+        HideKeyboard();
     }
 
     private void DiteUpdate(){
@@ -161,7 +129,9 @@ public class MainActivity extends AppCompatActivity {
         String dDISH_NM = null, mMeal_SC_NM = null;
         String code = null;
         boolean inCode = false;
-        diteView.setText("");
+        diteView.setText(date_text.substring(0, 4) + "년 " +
+                date_text.substring(4, 6) + "월 " +
+                date_text.substring(6, 8) + "일\n\n");
         try{
             URL url = new URL("https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=178a8938c5404e889f3f20eee3811ae0&Type=xml" +
                     "&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=R10&SD_SCHUL_CODE=8881025" +
